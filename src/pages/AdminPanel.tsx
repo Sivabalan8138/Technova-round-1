@@ -179,56 +179,19 @@ export default function AdminPanel() {
         reader.readAsDataURL(file);
       });
 
-      // If we have an existing Excel list, try matching by filename number or next available question
-      let assigned = false;
-      
-      if (updatedQuestions.length > 0) {
-        // Try matching by number first (e.g., Q1.png)
-        const match = file.name.match(/\d+/);
-        if (match) {
-          const qNum = parseInt(match[0]);
-          const qIndex = updatedQuestions.findIndex(q => q.sNo === qNum);
-          if (qIndex !== -1) {
-            updatedQuestions[qIndex] = { ...updatedQuestions[qIndex], localImage: dataUrl };
-            assigned = true;
-            matchCount++;
-          }
-        }
-        
-        // If no number match, find the first question that doesn't have an image
-        if (!assigned) {
-          const emptyImageIndex = updatedQuestions.findIndex(q => !q.localImage && !q.imageUrl);
-          if (emptyImageIndex !== -1) {
-            updatedQuestions[emptyImageIndex] = { ...updatedQuestions[emptyImageIndex], localImage: dataUrl };
-            assigned = true;
-            matchCount++;
-          }
-        }
-      }
-
-      // If we still haven't assigned it (e.g. no Excel uploaded, or we ran out of Excel questions)
-      // We automatically create a new question just for this image!
-      if (!assigned) {
-        const newSNo = updatedQuestions.length > 0 ? Math.max(...updatedQuestions.map(q => q.sNo)) + 1 : i + 1;
-        updatedQuestions.push({
-          sNo: newSNo,
-          questionText: 'Emoji Decode', // Default placeholder text
-          time: defaultTime,
-          localImage: dataUrl
-        });
-        addedCount++;
-      }
+      // Simply append every image as a brand new question at the end
+      const newSNo = updatedQuestions.length > 0 ? Math.max(...updatedQuestions.map(q => q.sNo)) + 1 : i + 1;
+      updatedQuestions.push({
+        sNo: newSNo,
+        questionText: 'Emoji Decode', // Default placeholder text for image-only questions
+        time: defaultTime,
+        localImage: dataUrl
+      });
+      addedCount++;
     }
 
     updateQuestions(updatedQuestions);
-    
-    if (addedCount > 0 && matchCount === 0) {
-      setMessage({ text: `Created ${addedCount} new image questions! No Excel needed.`, type: 'success' });
-    } else if (addedCount > 0 && matchCount > 0) {
-      setMessage({ text: `Matched ${matchCount} images to Excel questions, and added ${addedCount} new image questions.`, type: 'success' });
-    } else {
-      setMessage({ text: `Successfully matched ${matchCount} images to questions.`, type: 'success' });
-    }
+    setMessage({ text: `Successfully appended ${addedCount} new image questions to the event!`, type: 'success' });
   };
 
   const openDisplay = () => {
