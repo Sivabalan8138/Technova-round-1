@@ -81,7 +81,11 @@ export const EventProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   // Timer logic
   useEffect(() => {
-    if (state.status === 'RUNNING') {
+    // ONLY run the interval on the admin tab to prevent multiple tabs 
+    // decrementing the timer and broadcasting simultaneously (which makes it run 2x fast).
+    const isDisplayScreen = window.location.pathname.includes('/display');
+    
+    if (state.status === 'RUNNING' && !isDisplayScreen) {
       lastUpdateRef.current = Date.now();
       timerRef.current = setInterval(() => {
         const now = Date.now();
