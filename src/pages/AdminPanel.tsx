@@ -31,6 +31,36 @@ export default function AdminPanel() {
     }
   }, [message]);
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ignore if typing in an input field
+      if (document.activeElement?.tagName === 'INPUT' || document.activeElement?.tagName === 'SELECT') return;
+
+      switch (e.key) {
+        case ' ': // Space
+          e.preventDefault(); // prevent scrolling
+          if (state.status === 'IDLE' || state.status === 'PAUSED') {
+            state.status === 'IDLE' ? startRound() : resumeRound();
+          } else if (state.status === 'RUNNING') {
+            pauseRound();
+          }
+          break;
+        case 'ArrowRight':
+          nextQuestion();
+          break;
+        case 'ArrowLeft':
+          previousQuestion();
+          break;
+        case 'r':
+        case 'R':
+          restartQuestion();
+          break;
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [state.status, startRound, resumeRound, pauseRound, nextQuestion, previousQuestion, restartQuestion]);
+
   const downloadTemplate = () => {
     const ws = XLSX.utils.json_to_sheet([
       { 'S.NO': 1, 'Question': 'What is the SI unit of current?', 'Option A': 'Volt', 'Option B': 'Ampere', 'Option C': 'Ohm', 'Option D': 'Watt', 'Time': 20, 'Image URL': '' },

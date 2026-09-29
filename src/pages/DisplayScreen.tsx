@@ -11,7 +11,18 @@ export default function DisplayScreen() {
       setIsFullscreen(!!document.fullscreenElement);
     };
     document.addEventListener('fullscreenchange', handleFullscreenChange);
-    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+    
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key.toLowerCase() === 'f') {
+        toggleFullscreen();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      window.removeEventListener('keydown', handleKeyDown);
+    };
   }, []);
 
   const toggleFullscreen = () => {
@@ -154,14 +165,14 @@ export default function DisplayScreen() {
         Organized by Electrical Club | VSB Engineering College
       </footer>
 
-      {/* Floating Controls (Hidden in presentation, visible on hover) */}
-      <div className="fixed bottom-4 right-4 opacity-0 hover:opacity-100 transition-opacity z-50">
+      {/* Floating Controls */}
+      <div className="fixed bottom-6 right-6 opacity-30 hover:opacity-100 transition-opacity z-50">
         <button 
           onClick={toggleFullscreen}
-          className="bg-black/50 p-3 rounded-full border border-gray-700 hover:bg-brand-secondary/50 transition-colors"
+          className="bg-black/80 p-4 rounded-full border border-gray-600 hover:bg-brand-secondary hover:border-brand-accent transition-colors shadow-lg flex items-center justify-center group"
           title="Toggle Fullscreen (F)"
         >
-          {isFullscreen ? <Minimize size={24} /> : <Maximize size={24} />}
+          {isFullscreen ? <Minimize size={28} className="text-gray-300 group-hover:text-white" /> : <Maximize size={28} className="text-gray-300 group-hover:text-white" />}
         </button>
       </div>
     </div>
