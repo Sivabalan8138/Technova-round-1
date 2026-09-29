@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useEventContext } from '../store/EventContext';
 import * as XLSX from 'xlsx';
-import { Play, Pause, SkipForward, SkipBack, RotateCcw, Monitor, RefreshCw, Upload, Download, Image as ImageIcon, Trash2 } from 'lucide-react';
+import { Play, Pause, SkipForward, SkipBack, RotateCcw, Monitor, RefreshCw, Upload, Download, Image as ImageIcon, Trash2, List, Edit2, Check, X, Trash } from 'lucide-react';
 import type { Question } from '../types';
 
 export default function AdminPanel() {
@@ -22,6 +22,8 @@ export default function AdminPanel() {
   } = useEventContext();
 
   const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' | 'info' } | null>(null);
+  const [editingSNo, setEditingSNo] = useState<number | null>(null);
+  const [editForm, setEditForm] = useState<Question | null>(null);
   
   // Clear message after 5 seconds
   useEffect(() => {
@@ -207,6 +209,29 @@ export default function AdminPanel() {
     if (window.confirm("Are you sure you want to remove all imported questions and images?")) {
       clearData();
       setMessage({ text: 'All event data cleared.', type: 'info' });
+    }
+  };
+
+  const handleDeleteQuestion = (sNo: number) => {
+    if (window.confirm('Are you sure you want to delete this question?')) {
+      const newQuestions = state.questions.filter(q => q.sNo !== sNo);
+      updateQuestions(newQuestions);
+      setMessage({ text: `Question ${sNo} deleted.`, type: 'info' });
+    }
+  };
+
+  const startEdit = (q: Question) => {
+    setEditingSNo(q.sNo);
+    setEditForm(JSON.parse(JSON.stringify(q))); // Deep copy
+  };
+
+  const saveEdit = () => {
+    if (editForm) {
+      const newQuestions = state.questions.map(q => q.sNo === editingSNo ? editForm : q);
+      updateQuestions(newQuestions);
+      setEditingSNo(null);
+      setEditForm(null);
+      setMessage({ text: 'Question updated successfully.', type: 'success' });
     }
   };
 
@@ -454,6 +479,98 @@ export default function AdminPanel() {
 
           </div>
         </div>
+
+        {/* Manage Questions List */}
+        {state.questions.length > 0 && (
+          <div className="mt-8 bg-[#12121a] border border-gray-800 rounded-xl p-6 shadow-2xl">
+            <h3 className="text-xl font-bold mb-6 flex items-center text-brand-accent">
+              <List className="mr-2" size={20} /> Manage Questions
+            </h3>
+            
+            <div className="space-y-4">
+              {state.questions.map((q) => (
+                <div key={q.sNo} className="bg-gray-900 border border-gray-800 p-4 rounded-lg flex flex-col md:flex-row gap-4 items-start md:items-center">
+                  {editingSNo === q.sNo && editForm ? (
+                    <div className="flex-1 w-full space-y-3">
+                      <div className="flex gap-3">
+                        <span className="font-bold text-gray-400 mt-2">Q{q.sNo}</span>
+                        <input 
+                          type="text" 
+                          value={editForm.questionText} 
+                          onChange={(e) => setEditForm({...editForm, questionText: e.target.value})}
+                          className="flex-1 bg-black border border-gray-700 rounded p-2 text-white outline-none focus:border-brand-accent"
+                        />
+                        <input 
+                          type="number" 
+                          value={editForm.time} 
+                          onChange={(e) => setEditForm({...editForm, time: Number(e.target.value)})}
+                          className="w-20 bg-black border border-gray-700 rounded p-2 text-white outline-none focus:border-brand-accent"
+                          title="Time (seconds)"
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        {['a', 'b', 'c', 'd'].map(opt => (
+                          <div key={opt} className="flex items-center gap-2">
+                            <span className="text-gray-500 uppercase font-bold w-4">{opt}.</span>
+                            <input 
+                              type="text" 
+                              value={editForm.options?.[opt as keyof typeof editForm.options] || ''} 
+                              onChange={(e) => setEditForm({
+                                ...editForm, 
+                                options: { ...editForm.options, [opt]: e.target.value }
+                              })}
+                              className="flex-1 bg-black border border-gray-700 rounded p-1.5 text-sm text-white outline-none focus:border-brand-accent"
+                            />
+                          </div>
+                        ))}
+                      </div>
+                      <div className="flex justify-end gap-2 pt-2">
+                        <button onClick={() => setEditingSNo(null)} className="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 rounded text-sm flex items-center transition">
+                          <X size={14} className="mr-1" /> Cancel
+                        </button>
+                        <button onClick={saveEdit} className="px-3 py-1.5 bg-green-600 hover:bg-green-500 rounded text-sm flex items-center transition">
+                          <Check size={14} className="mr-1" /> Save
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="w-12 font-bold text-gray-500">Q{q.sNo}</div>
+                      <div className="flex-1">
+                        <div className="font-medium text-lg mb-1">{q.questionText}</div>
+                        <div className="text-sm text-gray-400 flex flex-wrap gap-x-4">
+                          <span>Time: {q.time}s</span>
+                          {(q.options?.a || q.options?.b) && (
+                            <span>Opts: [A: {q.options.a}] [B: {q.options.b}] ...</span>
+                          )}
+                          {(q.localImage || q.imageUrl) && (
+                            <span className="text-blue-400 flex items-center"><ImageIcon size={14} className="mr-1 inline" /> Image attached</span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <button 
+                          onClick={() => startEdit(q)}
+                          className="p-2 bg-gray-800 hover:bg-gray-700 text-blue-400 rounded transition"
+                          title="Edit"
+                        >
+                          <Edit2 size={18} />
+                        </button>
+                        <button 
+                          onClick={() => handleDeleteQuestion(q.sNo)}
+                          className="p-2 bg-gray-800 hover:bg-red-900/50 text-red-400 rounded transition"
+                          title="Delete"
+                        >
+                          <Trash size={18} />
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
