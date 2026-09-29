@@ -168,7 +168,6 @@ export default function AdminPanel() {
     }
 
     const updatedQuestions = [...state.questions];
-    let matchCount = 0;
     let addedCount = 0;
 
     for (let i = 0; i < imageFiles.length; i++) {
