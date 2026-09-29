@@ -2,13 +2,14 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { EventProvider } from './store/EventContext';
 import AdminPanel from './pages/AdminPanel';
 import DisplayScreen from './pages/DisplayScreen';
+import LandingPage from './pages/LandingPage';
 
 function App() {
   return (
     <EventProvider>
       <Router>
         <Routes>
-          <Route path="/" element={<Navigate to="/admin" replace />} />
+          <Route path="/" element={<LandingPage />} />
           <Route path="/admin" element={<AdminPanel />} />
           <Route path="/display" element={<DisplayScreen />} />
         </Routes>
