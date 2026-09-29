@@ -481,9 +481,17 @@ export default function AdminPanel() {
         {/* Manage Questions List */}
         {state.questions.length > 0 && (
           <div className="mt-8 bg-[#12121a] border border-gray-800 rounded-xl p-6 shadow-2xl">
-            <h3 className="text-xl font-bold mb-6 flex items-center text-brand-accent">
-              <List className="mr-2" size={20} /> Manage Questions
-            </h3>
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xl font-bold flex items-center text-brand-accent">
+                <List className="mr-2" size={20} /> Manage Questions
+              </h3>
+              <button 
+                onClick={handleClearData}
+                className="py-1.5 px-4 bg-red-900/50 hover:bg-red-800 transition flex items-center justify-center rounded border border-red-700/50 text-red-200 text-sm font-bold shadow-lg"
+              >
+                <Trash2 className="mr-2" size={16} /> DELETE ALL QUESTIONS
+              </button>
+            </div>
             
             <div className="space-y-4">
               {state.questions.map((q) => (
