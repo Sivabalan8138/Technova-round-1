@@ -75,15 +75,15 @@ export default function DisplayScreen() {
   const isTimeWarning = state.timerRemaining <= 5 && state.timerRemaining > 0 && state.status === 'RUNNING';
 
   return (
-    <div className="min-h-screen bg-brand-dark text-white flex flex-col overflow-hidden circuit-pattern relative">
+    <div className="h-screen w-screen bg-brand-dark text-white flex flex-col overflow-hidden circuit-pattern relative">
       {/* Background gradients */}
       <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] rounded-full bg-brand-secondary/10 blur-[120px] pointer-events-none"></div>
       <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] rounded-full bg-brand-accent/10 blur-[120px] pointer-events-none"></div>
 
       {/* Header */}
-      <header className="p-6 md:p-8 lg:p-10 flex justify-between items-start z-10">
+      <header className="px-6 py-4 md:px-8 md:py-6 flex justify-between items-start z-10 shrink-0">
         <div>
-          <h1 className="text-3xl md:text-5xl font-bold tracking-widest text-brand-accent mb-2">TECHNOVA</h1>
+          <h1 className="text-3xl md:text-5xl font-bold tracking-widest text-brand-accent mb-1">TECHNOVA</h1>
           <h2 className="text-xl md:text-3xl font-light tracking-wide text-gray-200">ROUND 1 — SPARK START</h2>
         </div>
 
@@ -96,7 +96,7 @@ export default function DisplayScreen() {
       </header>
 
       {/* Main Content */}
-      <main className="flex-grow flex flex-col items-center justify-center p-8 z-10 w-full max-w-[1600px] mx-auto">
+      <main className="flex-1 flex flex-col items-center justify-center p-4 z-10 w-full max-w-[1600px] mx-auto overflow-hidden">
         {isEmojiDecode && hasImage ? (
           // EMOJI DECODE / IMAGE FULL-SCREEN MODE
           <div className="w-full h-full flex flex-col items-center justify-center animate-[fadeIn_0.5s_ease-out]">
@@ -117,27 +117,27 @@ export default function DisplayScreen() {
           </div>
         ) : (
           // QUICK MIX MODE
-          <div className="w-full flex flex-col justify-center animate-[fadeIn_0.5s_ease-out]">
-            <div className="mb-12 md:mb-16 text-center">
-              <div className="inline-block bg-brand-secondary/20 border border-brand-secondary/50 text-brand-secondary px-6 py-2 rounded-full text-xl md:text-2xl font-bold tracking-widest mb-8">
+          <div className="w-full flex flex-col justify-center items-center h-full max-h-full animate-[fadeIn_0.5s_ease-out]">
+            <div className="mb-6 md:mb-10 text-center flex-shrink-0">
+              <div className="inline-block bg-brand-secondary/20 border border-brand-secondary/50 text-brand-secondary px-6 py-2 rounded-full text-lg md:text-xl font-bold tracking-widest mb-4 md:mb-6">
                 QUESTION {String(state.currentQuestionIndex + 1).padStart(2, '0')}
               </div>
-              <h3 className="text-4xl md:text-6xl lg:text-7xl font-semibold leading-tight max-w-6xl mx-auto drop-shadow-lg">
+              <h3 className="text-3xl md:text-5xl lg:text-6xl font-semibold leading-tight max-w-6xl mx-auto drop-shadow-lg px-4">
                 {currentQ?.questionText}
               </h3>
             </div>
 
             {currentQ?.options && (currentQ.options.a || currentQ.options.b || currentQ.options.c || currentQ.options.d) && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 max-w-6xl mx-auto w-full">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 max-w-6xl mx-auto w-full px-4 flex-shrink min-h-0 overflow-y-auto custom-scrollbar pb-4">
                 {['a', 'b', 'c', 'd'].map((opt) => {
                   const optText = currentQ.options?.[opt as keyof typeof currentQ.options];
                   if (!optText) return null;
                   return (
-                    <div key={opt} className="bg-[#0f111a]/80 backdrop-blur-md border border-gray-700 p-6 md:p-10 rounded-2xl shadow-xl flex items-center transform transition-transform">
-                      <span className="text-4xl md:text-5xl font-bold text-brand-accent mr-6 md:mr-8 uppercase">
+                    <div key={opt} className="bg-[#0f111a]/80 backdrop-blur-md border border-gray-700 p-4 md:p-6 lg:p-8 rounded-2xl shadow-xl flex items-center transform transition-transform">
+                      <span className="text-3xl md:text-4xl font-bold text-brand-accent mr-4 md:mr-6 uppercase">
                         {opt}.
                       </span>
-                      <span className="text-3xl md:text-4xl font-medium text-gray-100">
+                      <span className="text-2xl md:text-3xl font-medium text-gray-100">
                         {optText}
                       </span>
                     </div>
@@ -150,7 +150,7 @@ export default function DisplayScreen() {
       </main>
 
       {/* Footer Branding (Subtle) */}
-      <footer className="p-6 md:p-8 opacity-40 text-center z-10 text-sm md:text-base tracking-widest uppercase">
+      <footer className="p-4 opacity-40 text-center z-10 text-xs md:text-sm tracking-widest uppercase shrink-0">
         Organized by Electrical Club | VSB Engineering College
       </footer>
 
