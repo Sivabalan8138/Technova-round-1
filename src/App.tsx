@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { EventProvider } from './store/EventContext';
 import AdminPanel from './pages/AdminPanel';
 import DisplayScreen from './pages/DisplayScreen';
