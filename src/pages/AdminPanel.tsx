@@ -157,41 +157,77 @@ export default function AdminPanel() {
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
-    if (state.questions.length === 0) {
-      setMessage({ text: 'Please upload the Excel file with questions first.', type: 'error' });
+    // Filter and sort files alphanumerically (so 1.png, 2.png, 10.png order correctly)
+    const imageFiles = Array.from(files)
+      .filter(f => f.type.startsWith('image/'))
+      .sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
+
+    if (imageFiles.length === 0) {
+      setMessage({ text: 'No image files found in the selected folder.', type: 'error' });
       return;
     }
 
-    let matchCount = 0;
     const updatedQuestions = [...state.questions];
+    let matchCount = 0;
+    let addedCount = 0;
 
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i];
-      if (!file.type.startsWith('image/')) continue;
+    for (let i = 0; i < imageFiles.length; i++) {
+      const file = imageFiles[i];
+      const dataUrl = await new Promise<string>((resolve) => {
+        const reader = new FileReader();
+        reader.onload = (ev) => resolve(ev.target?.result as string);
+        reader.readAsDataURL(file);
+      });
 
-      // Extract number from filename (e.g., Q1.png, 1.png, image-2.jpg)
-      const match = file.name.match(/\d+/);
-      if (match) {
-        const qNum = parseInt(match[0]);
-        const qIndex = updatedQuestions.findIndex(q => q.sNo === qNum);
-        if (qIndex !== -1) {
-          // Read file as data URL
-          const dataUrl = await new Promise<string>((resolve) => {
-            const reader = new FileReader();
-            reader.onload = (ev) => resolve(ev.target?.result as string);
-            reader.readAsDataURL(file);
-          });
-          updatedQuestions[qIndex] = { ...updatedQuestions[qIndex], localImage: dataUrl };
-          matchCount++;
+      // If we have an existing Excel list, try matching by filename number or next available question
+      let assigned = false;
+      
+      if (updatedQuestions.length > 0) {
+        // Try matching by number first (e.g., Q1.png)
+        const match = file.name.match(/\d+/);
+        if (match) {
+          const qNum = parseInt(match[0]);
+          const qIndex = updatedQuestions.findIndex(q => q.sNo === qNum);
+          if (qIndex !== -1) {
+            updatedQuestions[qIndex] = { ...updatedQuestions[qIndex], localImage: dataUrl };
+            assigned = true;
+            matchCount++;
+          }
         }
+        
+        // If no number match, find the first question that doesn't have an image
+        if (!assigned) {
+          const emptyImageIndex = updatedQuestions.findIndex(q => !q.localImage && !q.imageUrl);
+          if (emptyImageIndex !== -1) {
+            updatedQuestions[emptyImageIndex] = { ...updatedQuestions[emptyImageIndex], localImage: dataUrl };
+            assigned = true;
+            matchCount++;
+          }
+        }
+      }
+
+      // If we still haven't assigned it (e.g. no Excel uploaded, or we ran out of Excel questions)
+      // We automatically create a new question just for this image!
+      if (!assigned) {
+        const newSNo = updatedQuestions.length > 0 ? Math.max(...updatedQuestions.map(q => q.sNo)) + 1 : i + 1;
+        updatedQuestions.push({
+          sNo: newSNo,
+          questionText: 'Emoji Decode', // Default placeholder text
+          time: defaultTime,
+          localImage: dataUrl
+        });
+        addedCount++;
       }
     }
 
-    if (matchCount > 0) {
-      updateQuestions(updatedQuestions);
-      setMessage({ text: `Successfully matched ${matchCount} images to questions.`, type: 'success' });
+    updateQuestions(updatedQuestions);
+    
+    if (addedCount > 0 && matchCount === 0) {
+      setMessage({ text: `Created ${addedCount} new image questions! No Excel needed.`, type: 'success' });
+    } else if (addedCount > 0 && matchCount > 0) {
+      setMessage({ text: `Matched ${matchCount} images to Excel questions, and added ${addedCount} new image questions.`, type: 'success' });
     } else {
-      setMessage({ text: 'No matching images found for the uploaded questions. (Naming format: Q1.png, 2.jpg, etc.)', type: 'info' });
+      setMessage({ text: `Successfully matched ${matchCount} images to questions.`, type: 'success' });
     }
   };
 
