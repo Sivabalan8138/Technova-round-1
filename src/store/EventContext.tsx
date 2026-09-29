@@ -36,7 +36,7 @@ export const EventProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [defaultTime, setDefaultTime] = useState(20);
   const channelRef = useRef<BroadcastChannel | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const lastUpdateRef = useRef<number>(Date.now());
+  const targetEndTimeRef = useRef<number | null>(null);
 
   // Load from localforage on mount
   useEffect(() => {
@@ -86,51 +86,61 @@ export const EventProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const isDisplayScreen = window.location.pathname.includes('/display');
     
     if (state.status === 'RUNNING' && !isDisplayScreen) {
-      lastUpdateRef.current = Date.now();
+      // Initialize target time if it doesn't exist
+      if (!targetEndTimeRef.current) {
+        targetEndTimeRef.current = Date.now() + state.timerRemaining * 1000;
+      }
+
       timerRef.current = setInterval(() => {
-        const now = Date.now();
-        const delta = Math.floor((now - lastUpdateRef.current) / 1000);
+        if (!targetEndTimeRef.current) return;
         
-        if (delta >= 1) {
-          lastUpdateRef.current = now;
-          setState(prev => {
-            if (prev.status !== 'RUNNING') return prev;
-            
-            const newTime = prev.timerRemaining - 1;
-            if (newTime <= 0) {
-              // Time's up, go to next question automatically
-              const nextIndex = prev.currentQuestionIndex + 1;
-              if (nextIndex >= prev.questions.length) {
-                // Round completed
-                const completedState = { ...prev, status: 'COMPLETED' as const, timerRemaining: 0 };
-                if (channelRef.current) channelRef.current.postMessage({ type: 'SYNC_STATE', state: completedState });
-                return completedState;
-              } else {
-                // Next question
-                const nextQuestion = prev.questions[nextIndex];
-                const nextTime = nextQuestion?.time || defaultTime;
-                const nextState = { ...prev, currentQuestionIndex: nextIndex, timerRemaining: nextTime };
-                if (channelRef.current) channelRef.current.postMessage({ type: 'SYNC_STATE', state: nextState });
-                return nextState;
-              }
+        const now = Date.now();
+        const remaining = Math.max(0, Math.ceil((targetEndTimeRef.current - now) / 1000));
+
+        setState(prev => {
+          if (prev.status !== 'RUNNING') return prev;
+          if (prev.timerRemaining === remaining) return prev; // No change needed this tick
+          
+          if (remaining <= 0) {
+            // Time's up, go to next question automatically
+            const nextIndex = prev.currentQuestionIndex + 1;
+            if (nextIndex >= prev.questions.length) {
+              // Round completed
+              const completedState = { ...prev, status: 'COMPLETED' as const, timerRemaining: 0 };
+              if (channelRef.current) channelRef.current.postMessage({ type: 'SYNC_STATE', state: completedState });
+              targetEndTimeRef.current = null;
+              return completedState;
+            } else {
+              // Next question
+              const nextQuestion = prev.questions[nextIndex];
+              const nextTime = nextQuestion?.time || defaultTime;
+              const nextState = { ...prev, currentQuestionIndex: nextIndex, timerRemaining: nextTime };
+              if (channelRef.current) channelRef.current.postMessage({ type: 'SYNC_STATE', state: nextState });
+              
+              // Set absolute target time for the next question
+              targetEndTimeRef.current = Date.now() + nextTime * 1000;
+              return nextState;
             }
-            const updatedState = { ...prev, timerRemaining: newTime };
-            // Broadcast every second so display is in sync
-            if (channelRef.current) channelRef.current.postMessage({ type: 'SYNC_STATE', state: updatedState });
-            return updatedState;
-          });
-        }
-      }, 100); // Check frequently for accuracy
+          }
+          
+          const updatedState = { ...prev, timerRemaining: remaining };
+          // Broadcast every second so display is in sync
+          if (channelRef.current) channelRef.current.postMessage({ type: 'SYNC_STATE', state: updatedState });
+          return updatedState;
+        });
+      }, 100); // Check frequently, but math is absolute so it never drifts
     } else {
       if (timerRef.current) {
         clearInterval(timerRef.current);
         timerRef.current = null;
       }
+      targetEndTimeRef.current = null; // Clear target time when paused or idle
     }
+    
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [state.status, defaultTime, state.questions.length]); // Intentionally omitting state.currentQuestionIndex and timerRemaining to avoid resetting interval
+  }, [state.status, defaultTime, state.questions.length]);
 
   const updateQuestions = (questions: Question[]) => {
     localforage.setItem(LOCAL_STORAGE_KEY, { questions }).catch(err => console.error(err));
